@@ -82,6 +82,7 @@ player_model.update_player_model = function(player, modelname)
 		collisionbox = player_model.list[modelname].collisionbox,
         damage_texture_modifier = ""
 	})
+    player:get_meta():set_string("player_model", modelname)
 end
 
 minetest.register_chatcommand("set_player_model", {
@@ -100,6 +101,24 @@ minetest.register_chatcommand("set_player_model", {
 	end
 })
 
+player_model.reset_player_model = function(playername)
+    if player_model.players[playername] ~= nil and player_model.players[playername]['original'] then
+        minetest.get_player_by_name(playername):set_properties({
+            visual = player_model.players[playername]['original']['visual'],
+            mesh = player_model.players[playername]['original']['mesh'],
+            textures = player_model.players[playername]['original']['textures'],
+            visual_size = player_model.players[playername]['original']['visual_size'],
+            collisionbox = player_model.players[playername]['original']['collisionbox'],
+            damage_texture_modifier = player_model.players[playername]['original']['damage_texture_modifier']
+        })
+        minetest.chat_send_player(playername, "model reset")
+        if armormod ~= nil then
+            armormod.disabled[playername] = "false"
+            armormod.update_player_visuals(minetest.get_player_by_name(playername))
+        end
+    end
+end
+
 minetest.register_chatcommand("reset_player_model", {
 	func = function(playername, param)
 		if player_model.players[playername] ~= nil and player_model.players[playername]['original'] then
@@ -115,7 +134,6 @@ minetest.register_chatcommand("reset_player_model", {
             if armormod ~= nil then
                 armormod.disabled[playername] = "false"
             end
-        
         end
     end
 })
@@ -129,5 +147,44 @@ minetest.register_chatcommand("list_player_models", {
         minetest.chat_send_player(playername, list)
 	end
 })
+
+minetest.register_chatcommand("player_models", {
+	func = function(playername, param)
+        local formspec = "size[4,3]".."label[0,0;Select Model]"
+        local models = {}
+        for k,v in pairs(player_model.list) do
+            table.insert(models, k)
+        end
+        table.sort(models, function(a, b) return a < b end)
+        formspec = formspec.."dropdown[0,1;4;dropdownModel;"..table.concat(models, ",")..";0;false]"
+        formspec = formspec.."button_exit[0,2;2,1;btSet;Set Model]"
+        formspec = formspec.."button_exit[2,2;2,1;btReset;Reset Model]"
+        minetest.show_formspec(playername, 'player_models_show_ui', formspec)
+	end
+})
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+    if formname == 'player_models_show_ui' then
+        if fields ~= nil and fields['btSet'] ~= nil and fields['dropdownModel'] ~= nil then
+            player_model.update_player_model(player, fields['dropdownModel'])
+        elseif fields ~= nil and fields['btReset'] ~= nil then
+            local playername = player:get_player_name()
+            if player_model.players[playername] ~= nil and player_model.players[playername]['original'] then
+                minetest.get_player_by_name(playername):set_properties({
+                    visual = player_model.players[playername]['original']['visual'],
+                    mesh = player_model.players[playername]['original']['mesh'],
+                    textures = player_model.players[playername]['original']['textures'],
+                    visual_size = player_model.players[playername]['original']['visual_size'],
+                    collisionbox = player_model.players[playername]['original']['collisionbox'],
+                    damage_texture_modifier = player_model.players[playername]['original']['damage_texture_modifier']
+                })
+                minetest.chat_send_player(playername, "model reset")
+                if armormod ~= nil then
+                    armormod.disabled[playername] = "false"
+                end
+            end
+        end
+    end
+end)
 
 print("[player_model]: initialized")
