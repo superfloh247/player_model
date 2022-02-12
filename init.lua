@@ -20,12 +20,8 @@ for regentityname, ent in pairs(minetest.registered_entities) do
     if string.find(regentityname, '^petz:')
       or string.find(regentityname, '^animalworld:')
       or string.find(regentityname, '^mobs_animal:')
-      or string.find(regentityname, '^water_life:')
       or string.find(regentityname, '^extra_mobs:')
       or string.find(regentityname, '^mobs:')
-      or string.find(regentityname, '^animalia:')
-      or string.find(regentityname, '^xocean:')
-      or string.find(regentityname, '^sharks:')
       or string.find(regentityname, '^mobs_mc:') then
         if minetest.registered_entities[regentityname]['mesh'] ~= nil
           and (minetest.registered_entities[regentityname]['textures'] ~= nil or minetest.registered_entities[regentityname]['texture_list'] ~= nil)
@@ -52,7 +48,12 @@ end
 -- wrap 3d_armor to disable it temporarily
 if armormod ~= nil then
     armormod.disabled = {}
-    local armormod_update_player_visuals = armormod.update_player_visuals
+    local armormod_update_player_visuals = function() end
+    if armor ~= nil then
+        armormod_update_player_visuals = armormod.update_player_visuals
+    elseif mcl_armor ~= nil then
+        armormod_update_player_visuals = armormod.update
+    end
     armormod.update_player_visuals = function(self, player)
         if armormod.disabled[player:get_player_name()] == "true" then
             -- do nothing
