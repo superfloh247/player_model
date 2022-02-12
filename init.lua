@@ -18,9 +18,14 @@ end
 
 for regentityname, ent in pairs(minetest.registered_entities) do
     if string.find(regentityname, '^petz:')
-      or string.find(regentityname, '^animalworld:') 
-      or string.find(regentityname, '^mobs_animal:') 
-      or string.find(regentityname, '^extra_mobs:') 
+      or string.find(regentityname, '^animalworld:')
+      or string.find(regentityname, '^mobs_animal:')
+      or string.find(regentityname, '^water_life:')
+      or string.find(regentityname, '^extra_mobs:')
+      or string.find(regentityname, '^mobs:')
+      or string.find(regentityname, '^animalia:')
+      or string.find(regentityname, '^xocean:')
+      or string.find(regentityname, '^sharks:')
       or string.find(regentityname, '^mobs_mc:') then
         if minetest.registered_entities[regentityname]['mesh'] ~= nil
           and (minetest.registered_entities[regentityname]['textures'] ~= nil or minetest.registered_entities[regentityname]['texture_list'] ~= nil)
@@ -58,7 +63,7 @@ if armormod ~= nil then
 end
 
 player_model.update_player_model = function(player, modelname)
-    print("[player_model]: update_player_model("..player:get_player_name()..","..modelname..")" .. dump(player_model.list[modelname]))
+    print("[player_model]: update_player_model("..player:get_player_name()..","..modelname..")")
     if armormod ~= nil then
         armormod.disabled[player:get_player_name()] = "true"
     end
