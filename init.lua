@@ -7,7 +7,7 @@ player_model.players = {}
 local armormod = nil
 if armor ~= nil then
     armormod = armor
-elseif mcl_armor ~= nil then
+elseif mcl_player ~= nil then
     armormod = mcl_player
 end
 
