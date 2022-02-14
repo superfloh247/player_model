@@ -8,7 +8,7 @@ local armormod = nil
 if armor ~= nil then
     armormod = armor
 elseif mcl_armor ~= nil then
-    armormod = mcl_armor
+    armormod = mcl_player
 end
 
 player_model.register_model = function(name, modeldef)
@@ -47,18 +47,44 @@ end
 
 -- wrap 3d_armor to disable it temporarily
 if armormod ~= nil then
-    armormod.disabled = {}
-    local armormod_update_player_visuals = function() end
+    armormod.player_model_active = {}
     if armor ~= nil then
-        armormod_update_player_visuals = armormod.update_player_visuals
-    elseif mcl_armor ~= nil then
-        armormod_update_player_visuals = armormod.update
-    end
-    armormod.update_player_visuals = function(self, player)
-        if armormod.disabled[player:get_player_name()] == "true" then
-            -- do nothing
-        else
-            armormod_update_player_visuals(self, player)
+        local armor_update_player_visuals = function(self, player) end
+        armor_update_player_visuals = armor.update_player_visuals
+        armor.update_player_visuals = function(self, player)
+            if armormod.player_model_active[player:get_player_name()] == "true" then
+                -- do nothing
+            else
+                armor_update_player_visuals(self, player)
+            end
+        end
+    elseif mcl_player ~= nil then
+        local mcl_player_player_set_skin = function(player, texture, preview) end
+        mcl_player_player_set_skin = mcl_player.player_set_skin
+        mcl_player.player_set_skin = function(player, texture, preview)
+            if armormod.player_model_active[player:get_player_name()] == "true" then
+                -- do nothing
+            else
+                mcl_player_player_set_skin(player, texture, preview)
+            end
+        end
+        local mcl_player_player_set_armor = function(player, texture, preview) end
+        mcl_player_player_set_armor = mcl_player.player_set_armor
+        mcl_player.player_set_armor = function(player, texture, preview)
+            if armormod.player_model_active[player:get_player_name()] == "true" then
+                -- do nothing
+            else
+                mcl_player_player_set_armor(player, texture, preview)
+            end
+        end
+        local mcl_player_player_set_wielditem = function(player, texture) end
+        mcl_player_player_set_wielditem = mcl_player.player_set_wielditem
+        mcl_player.player_set_wielditem = function(player, texture)
+            if armormod.player_model_active[player:get_player_name()] == "true" then
+                -- do nothing
+            else
+                mcl_player_player_set_wielditem(player, texture)
+            end
         end
     end
 end
@@ -66,7 +92,7 @@ end
 player_model.update_player_model = function(player, modelname)
     print("[player_model]: update_player_model("..player:get_player_name()..","..modelname..")")
     if armormod ~= nil then
-        armormod.disabled[player:get_player_name()] = "true"
+        armormod.player_model_active[player:get_player_name()] = "true"
     end
     if player_model.players[player:get_player_name()] == nil then
         -- first shapeshift, store original model for reset
@@ -107,24 +133,6 @@ minetest.register_chatcommand("set_player_model", {
 	end
 })
 
-player_model.reset_player_model = function(playername)
-    if player_model.players[playername] ~= nil and player_model.players[playername]['original'] then
-        minetest.get_player_by_name(playername):set_properties({
-            visual = player_model.players[playername]['original']['visual'],
-            mesh = player_model.players[playername]['original']['mesh'],
-            textures = player_model.players[playername]['original']['textures'],
-            visual_size = player_model.players[playername]['original']['visual_size'],
-            collisionbox = player_model.players[playername]['original']['collisionbox'],
-            damage_texture_modifier = player_model.players[playername]['original']['damage_texture_modifier']
-        })
-        minetest.chat_send_player(playername, "model reset")
-        if armormod ~= nil then
-            armormod.disabled[playername] = "false"
-            armormod.update_player_visuals(minetest.get_player_by_name(playername))
-        end
-    end
-end
-
 minetest.register_chatcommand("reset_player_model", {
 	func = function(playername, param)
 		if player_model.players[playername] ~= nil and player_model.players[playername]['original'] then
@@ -138,7 +146,7 @@ minetest.register_chatcommand("reset_player_model", {
             })
             minetest.chat_send_player(playername, "model reset")
             if armormod ~= nil then
-                armormod.disabled[playername] = "false"
+                armormod.player_model_active[playername] = "false"
             end
         end
     end
@@ -186,7 +194,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 })
                 minetest.chat_send_player(playername, "model reset")
                 if armormod ~= nil then
-                    armormod.disabled[playername] = "false"
+                    armormod.player_model_active[playername] = "false"
                 end
             end
         end
